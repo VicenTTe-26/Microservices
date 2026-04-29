@@ -1,0 +1,85 @@
+services:
+  # -----------------------------------------------------------
+  # CONTENEDOR 1: LA BASE DE DATOS USER-SERVICE
+  # -----------------------------------------------------------
+  db-user:
+    image: mysql:8.0
+    container_name: db_user
+    environment:
+      MYSQL_ROOT_PASSWORD: clave_maestra_root
+      MYSQL_DATABASE: user_db
+      MYSQL_USER: desarrollador
+      MYSQL_PASSWORD: password_seguro_123
+    ports:
+      - "3306:3306"
+    networks:
+      - red_interna_proyecto
+    volumes:
+      - persistencia_user:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 2: EL ENTORNO DE TRABAJO USER-SERVICE
+  # -----------------------------------------------------------
+  user-service:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: User-Service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - db-user
+    networks:
+      - red_interna_proyecto
+    # El comando 'tail -f /dev/null' es un truco técnico.
+    # Obliga al contenedor a quedarse encendido de forma permanente 
+    # en estado de espera, para que podamos entrar a él a programar.
+    command: tail -f /dev/null
+    # Vinculamos la carpeta vacía local con la ruta '/app' del contenedor.
+    volumes:
+      - ./codigo-fuente/user-service:/app
+    # Por defecto, el contenedor iniciará en la carpeta /app
+    working_dir: /app
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 3: LA BASE DE DATOS AUNTH-SERVICE
+  # -----------------------------------------------------------
+  db-auth:
+    image: mysql:8.0
+    container_name: db_auth
+    environment:
+      MYSQL_ROOT_PASSWORD: clave_maestra_root
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: desarrollador
+      MYSQL_PASSWORD: password_seguro_123
+    networks:
+      - red_interna_proyecto
+    volumes:
+      - persistencia_auth:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 4: EL ENTORNO DE TRABAJO AUNTH-SERVICE
+  # -----------------------------------------------------------
+  auth-service:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: Auth-Service
+    ports:
+      - "8089:8089"
+    depends_on:
+      - db-auth
+    networks:
+      - red_interna_proyecto
+    # El comando 'tail -f /dev/null' es un truco técnico.
+    # Obliga al contenedor a quedarse encendido de forma permanente 
+    # en estado de espera, para que podamos entrar a él a programar.
+    command: tail -f /dev/null
+    # Vinculamos la carpeta vacía local con la ruta '/app' del contenedor.
+    volumes:
+      - ./codigo-fuente/auth-service:/app
+    # Por defecto, el contenedor iniciará en la carpeta /app
+    working_dir: /app
+
+networks:
+  red_interna_proyecto:
+
+volumes:
+    persistencia_user:
+    persistencia_auth:
