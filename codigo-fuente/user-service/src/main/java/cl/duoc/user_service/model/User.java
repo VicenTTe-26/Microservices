@@ -21,10 +21,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "El nombre no puede estar vacío")
+    private Long idAuth;
+
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(min = 2, max = 100, message = "El nombre debe tener entre 2 y 100 caracteres")
     private String nombreCompleto;
 
-    @NotBlank(message = "El rut no puede estar vacío")
+    @NotBlank(message = "El RUT es obligatorio")
     private String rut;
 
     @NotBlank(message = "La fecha de nacimiento no puede estar vacia")
@@ -32,9 +35,6 @@ public class User {
 
     @NotBlank(message = "El número de telefono no puede estar vacio")
     private String numeroTelefono;
-
-    @NotBlank(message = "El correo no puede estar vacio")
-    private String correo;
 
     @NotBlank(message = "La direccion no puede estar vacia")
     private String direccion;

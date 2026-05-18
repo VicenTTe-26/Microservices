@@ -24,7 +24,7 @@ services:
     image: maven:3.9-eclipse-temurin-21
     container_name: User-Service
     ports:
-      - "8085:8085"
+      - "8080:8080"
     depends_on:
       - db-user
     networks:
@@ -56,7 +56,7 @@ services:
       - persistencia_auth:/var/lib/mysql
 
   # -----------------------------------------------------------
-  # CONTENEDOR 4: EL ENTORNO DE TRABAJO AUNTH-SERVICE
+  # CONTENEDOR 4: EL ENTORNO DE TRABAJO AUTH-SERVICE
   # -----------------------------------------------------------
   auth-service:
     image: maven:3.9-eclipse-temurin-21
@@ -77,9 +77,132 @@ services:
     # Por defecto, el contenedor iniciará en la carpeta /app
     working_dir: /app
 
+ # -----------------------------------------------------------
+  # CONTENEDOR 5: LA BASE DE DATOS COMMS-SERVICE
+  # -----------------------------------------------------------
+  db-comms:
+    image: mysql:8.0
+    container_name: db_comms
+    environment:
+      MYSQL_ROOT_PASSWORD: clave_maestra_root
+      MYSQL_DATABASE: comms_db
+      MYSQL_USER: desarrollador
+      MYSQL_PASSWORD: password_seguro_123
+    networks:
+      - red_interna_proyecto
+    volumes:
+      - persistencia_comms:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 6: EL ENTORNO DE TRABAJO COMMS-SERVICE
+  # -----------------------------------------------------------
+  comms-service:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: Comms-Service
+    ports:
+      - "8087:8087"
+    environment:
+      - ORDEN_URL=http://3.231.18.119:8084
+    depends_on:
+      - db-comms
+    networks:
+      - red_interna_proyecto
+    # El comando 'tail -f /dev/null' es un truco técnico.
+    # Obliga al contenedor a quedarse encendido de forma permanente 
+    # en estado de espera, para que podamos entrar a él a programar.
+    command: tail -f /dev/null
+    # Vinculamos la carpeta vacía local con la ruta '/app' del contenedor.
+    volumes:
+      - ./codigo-fuente/comms-service:/app
+    # Por defecto, el contenedor iniciará en la carpeta /app
+    working_dir: /app
+
+     # -----------------------------------------------------------
+  # CONTENEDOR 7: LA BASE DE DATOS LOGISTIC-SERVICE
+  # -----------------------------------------------------------
+  db-logistic:
+    image: mysql:8.0
+    container_name: db_logistic
+    environment:
+      MYSQL_ROOT_PASSWORD: clave_maestra_root
+      MYSQL_DATABASE: logistic_db
+      MYSQL_USER: desarrollador
+      MYSQL_PASSWORD: password_seguro_123
+    networks:
+      - red_interna_proyecto
+    volumes:
+      - persistencia_logistic:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 8: EL ENTORNO DE TRABAJO LOGISTIC-SERVICE
+  # -----------------------------------------------------------
+  logistic-service:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: Logistic-Service
+    ports:
+      - "8086:8086"
+    environment:
+      - ORDEN_URL=http://3.231.18.119:8084
+    depends_on:
+      - db-logistic
+    networks:
+      - red_interna_proyecto
+    # El comando 'tail -f /dev/null' es un truco técnico.
+    # Obliga al contenedor a quedarse encendido de forma permanente 
+    # en estado de espera, para que podamos entrar a él a programar.
+    command: tail -f /dev/null
+    # Vinculamos la carpeta vacía local con la ruta '/app' del contenedor.
+    volumes:
+      - ./codigo-fuente/logistic-service:/app
+    # Por defecto, el contenedor iniciará en la carpeta /app
+    working_dir: /app
+
+     # -----------------------------------------------------------
+  # CONTENEDOR 5: LA BASE DE DATOS PAYMENT-SERVICE
+  # -----------------------------------------------------------
+  db-payment:
+    image: mysql:8.0
+    container_name: db_payment
+    environment:
+      MYSQL_ROOT_PASSWORD: clave_maestra_root
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: desarrollador
+      MYSQL_PASSWORD: password_seguro_123
+    networks:
+      - red_interna_proyecto
+    volumes:
+      - persistencia_payment:/var/lib/mysql
+
+  # -----------------------------------------------------------
+  # CONTENEDOR 10: EL ENTORNO DE TRABAJO PAYMENT-SERVICE
+  # -----------------------------------------------------------
+  payment-service:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: Payment-Service
+    ports:
+      - "8085:8085"
+    environment:
+      - ORDEN_URL=http://3.231.18.119:8084
+    depends_on:
+      - db-payment
+    networks:
+      - red_interna_proyecto
+    # El comando 'tail -f /dev/null' es un truco técnico.
+    # Obliga al contenedor a quedarse encendido de forma permanente 
+    # en estado de espera, para que podamos entrar a él a programar.
+    command: tail -f /dev/null
+    # Vinculamos la carpeta vacía local con la ruta '/app' del contenedor.
+    volumes:
+      - ./codigo-fuente/payment-service:/app
+    # Por defecto, el contenedor iniciará en la carpeta /app
+    working_dir: /app
+
 networks:
   red_interna_proyecto:
 
 volumes:
     persistencia_user:
     persistencia_auth:
+    persistencia_comms:
+    persistencia_logistic:
+    persistencia_payment:
