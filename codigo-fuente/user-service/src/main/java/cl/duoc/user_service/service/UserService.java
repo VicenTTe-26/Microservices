@@ -12,7 +12,6 @@ import cl.duoc.user_service.exception.ServicioNoDisponibleException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,12 +22,11 @@ public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final AuthClient authClient; 
 
-    @Autowired
-    private AuthClient authClient; 
-
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, AuthClient authClient) {
         this.userRepository = userRepository;
+        this.authClient = authClient;
     }
 
     public UserDTO crearUsuario(UserCreateDTO request) {
@@ -73,10 +71,11 @@ public class UserService {
     }
     // Buscar Usuario por id
     public UserDTO findDtoById(Long id) {
-        User u = userRepository.findById(id)
+        return userRepository.findById(id)
+            .map(user -> convertirADTO(user))
             .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
 
-        return convertirADTO(u);
+        
     }
 
     // Buscar Usuario por id de auth
