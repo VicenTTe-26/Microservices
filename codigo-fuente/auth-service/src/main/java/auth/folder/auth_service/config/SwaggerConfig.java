@@ -1,19 +1,19 @@
-package payment.folder.payment_service.config;
+package auth.folder.auth_service.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration       
+@Configuration
 public class SwaggerConfig {
 
-    @Bean            
+    @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("API Payment Service")
+                .title("API Auth Service")
                 .version("1.0")
-                .description("Gestión de informacion de pagos"));
+                .description("Gestión de autenticaciones del sistema"));
     }
 }

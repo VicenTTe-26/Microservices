@@ -94,6 +94,7 @@ public class UserService {
             log.info("Usuario ID={} eliminada con éxito", id);
             return true;
         }
+        
         log.warn("No se pudo eliminar: Usuario ID={} no existe", id);
         return false;
     }

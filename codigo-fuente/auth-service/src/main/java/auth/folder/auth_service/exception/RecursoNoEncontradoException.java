@@ -1,4 +1,4 @@
-package payment.folder.payment_service.exception;
+package auth.folder.auth_service.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

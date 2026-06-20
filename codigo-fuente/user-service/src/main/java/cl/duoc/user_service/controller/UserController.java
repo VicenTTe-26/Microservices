@@ -60,14 +60,15 @@ public class UserController {
     @GetMapping("/idauth/{idAuth}")
     public ResponseEntity<List<UserDTO>> buscarPorIdAuth(@Parameter(description = "ID del auth que está asociado al usuario", required = true) @PathVariable Long idAuth) {
         List<UserDTO> usuarios = userService.obtenerPorAuthId(idAuth);
-        return usuarios.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(usuarios);
+        return usuarios.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(usuarios);
     }
 
     // Registrar un nuevo Usuario
     @Operation(summary = "Registrar un nuevo usuario")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Auth encontrado"),
-        @ApiResponse(responseCode = "400", description = "Datos incorrectos")
+        @ApiResponse(responseCode = "201", description = "Usuario creado"),
+        @ApiResponse(responseCode = "400", description = "Datos incorrectos"),
+        @ApiResponse(responseCode = "503", description = "Servicio Auth no disponible para solicitar el id")
     })
     @PostMapping
     public ResponseEntity<UserDTO> crearPaciente(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos necesarios para la creacion", required = true) @Valid @RequestBody UserCreateDTO dto) {
@@ -80,7 +81,7 @@ public class UserController {
     // Eliminar Usuario por Id
     @Operation(summary = "Eliminar usuario por ID")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Usuario eliminado"),
+        @ApiResponse(responseCode = "204", description = "Usuario eliminado"),
         @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @DeleteMapping("/{id}")

@@ -12,7 +12,6 @@ import payment.folder.payment_service.exception.ServicioNoDisponibleException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,12 +22,11 @@ public class PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
-
-    @Autowired
     private OrdenClient ordenClient; 
 
-    public PaymentService(PaymentRepository paymentRepository) {
+    public PaymentService(PaymentRepository paymentRepository, OrdenClient ordenClient) {
         this.paymentRepository = paymentRepository;
+        this.ordenClient = ordenClient;
     }
 
     public PaymentDTO crearPago(PaymentCreateDTO request) {
@@ -71,10 +69,10 @@ public class PaymentService {
     }
     // Buscar Pago por id
     public PaymentDTO findDtoById(Long id) {
-        Payment p = paymentRepository.findById(id)
+        return paymentRepository.findById(id)
+            .map(payment -> convertirADTO(payment))
             .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado"));
 
-        return convertirADTO(p);
     }
 
     // Buscar Pago por id de orden
