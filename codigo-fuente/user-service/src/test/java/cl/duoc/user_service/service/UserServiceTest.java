@@ -83,8 +83,12 @@ public class UserServiceTest {
         User userExistente = new User(2L, 5L, "Alfonso Rojas", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
         User userActualizado = new User(2L, 5L, "Maria Del Carmen", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
         
+        AuthDTO authSimulado = new AuthDTO();
+        authSimulado.setId(5L);
+
         // Simular que encuentra la reseña original antes de editarla
         when(userRepository.findById(2L)).thenReturn(Optional.of(userExistente));
+        when(authClient.buscarAuthPorId(5L)).thenReturn(authSimulado);
         when(userRepository.save(any(User.class))).thenReturn(userActualizado);
 
         UserDTO resultado = userService.actualizar(2L, dto);
