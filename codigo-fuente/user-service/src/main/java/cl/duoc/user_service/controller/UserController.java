@@ -96,7 +96,8 @@ public class UserController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Actualización exitosa"),
         @ApiResponse(responseCode = "400", description = "Datos invalidos"),
-        @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "503", description = "Servicio Auth no disponible para solicitar el id")
     })
     @PutMapping("/{id}")
     public ResponseEntity<UserDTO> actualizar(@Parameter(description = "ID del usuario a actualizar", required = true) @PathVariable Long id, @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Nuevos datos del usuario", required = true) @Valid @RequestBody UserCreateDTO dto) {

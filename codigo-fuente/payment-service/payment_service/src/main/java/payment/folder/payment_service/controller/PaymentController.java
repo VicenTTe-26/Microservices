@@ -65,7 +65,8 @@ public class PaymentController {
     @Operation(summary = "Registrar un nuevo pago")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Pago creado"),
-        @ApiResponse(responseCode = "400", description = "Datos incorrectos")
+        @ApiResponse(responseCode = "400", description = "Datos incorrectos"),
+        @ApiResponse(responseCode = "503", description = "Servicio Order no disponible para solicitar el id")
     })
     @PostMapping
     public ResponseEntity<PaymentDTO> crearPago(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos necesarios para la creacion", required = true) @Valid @RequestBody PaymentCreateDTO dto) {

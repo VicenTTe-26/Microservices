@@ -14,7 +14,6 @@ import comms.folder.comms_service.exception.ServicioNoDisponibleException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,50 +24,47 @@ public class CommsService {
     private static final Logger log = LoggerFactory.getLogger(CommsService.class);
 
     private final CommsRepository commsRepository;
+    private final OrdenClient ordenClient;
+    private final UserClient userClient;
 
-    @Autowired
-    private OrdenClient ordenClient;
-    
-    @Autowired
-    private UserClient userClient;
-
-    public CommsService(CommsRepository commsRepository) {
+    public CommsService(CommsRepository commsRepository, OrdenClient ordenClient, UserClient userClient) {
         this.commsRepository = commsRepository;
+        this.ordenClient = ordenClient;
+        this.userClient = userClient;
     }
 
-    public CommsDTO crearComms(CommsCreateDTO request) {
-        log.info("Validando usuario con id={}", request.getUserId());
-        log.info("Verificando existencia para usuario con id={}", request.getUserId());
-
-        // Llamada al microservicio de User
-        UserDTO user;
+    private void validarExistenciaUsuario(Long userId) {
+        log.info("Validando existencia para usuario con id={}", userId);
         try {
-            user = userClient.buscarUserPorId(request.getUserId());
+            UserDTO user = userClient.buscarUserPorId(userId);
             log.info("Usuario confirmado correctamente: ID={}, NombreCompleto='{}'", user.getId(), user.getNombreCompleto());
         } catch (FeignException.NotFound e) {
-            log.warn("Servicio User respondió: El  ID={} no existe", request.getUserId());
-            throw new RecursoNoEncontradoException("No se puede crear el mensaje: El usuario especificado no existe.");
+            log.warn("Servicio User respondió: El ID={} no existe", userId);
+            throw new RecursoNoEncontradoException("No se puede procesar la solicitud: El usuario especificado no existe.");
         } catch (FeignException e) {
             log.error("Error al consultar servicio User: {}", e.getMessage());
             throw new ServicioNoDisponibleException("Servicio de User no disponible para solicitar el usuario.");
-        } 
+        }
+    }
 
-
-        log.info("Iniciando proceso de notificación para la orden ID={}", request.getOrderId());
-        log.info("Verificando existencia de la orden con ID={}", request.getOrderId());
-        
-        // Llamada al microservicio Orden
-        OrdenDTO orden;
+    private void validarExistenciaOrden(Long orderId) {
+        log.info("Validando existencia de la orden con ID={}", orderId);
         try {
-            orden = ordenClient.buscarOrdenPorId(request.getOrderId());
-            log.info("Orden validada con éxito. ID={}, Estado='{}', UserID={}", orden.getId(), orden.getEstado(), orden.getIdUsuario());
+            OrdenDTO orden = ordenClient.buscarOrdenPorId(orderId);
+            log.info("Orden validada con éxito. ID={}, Estado='{}'", orden.getId(), orden.getEstado());
         } catch (FeignException.NotFound e) {
-            log.warn("Servicio de Ordenes respondió: La orden ID={} no existe", request.getOrderId());
-            throw new RecursoNoEncontradoException("No se puede enviar la notificación: La orden especificada no existe");
+            log.warn("Servicio de Ordenes respondió: La orden ID={} no existe", orderId);
+            throw new RecursoNoEncontradoException("No se puede procesar la solicitud: La orden especificada no existe");
         } catch (FeignException e) {
             log.error("Error de comunicación con servicio de Ordenes: {}", e.getMessage());
             throw new ServicioNoDisponibleException("Servicio de Ordenes no disponible momentáneamente. Intente más tarde.");
         }
+    }
+
+    public CommsDTO crearComms(CommsCreateDTO request) {
+        
+        validarExistenciaUsuario(request.getUserId());
+        validarExistenciaOrden(request.getOrderId());
 
         Comms nuevo = new Comms();
         nuevo.setUserId(request.getUserId());
@@ -92,10 +88,10 @@ public class CommsService {
     }
     // Buscar Mensaje por id
     public CommsDTO findDtoById(Long id) {
-        Comms c = commsRepository.findById(id)
+            return commsRepository.findById(id)
+            .map(mensaje -> convertirADTO(mensaje))
             .orElseThrow(() -> new RecursoNoEncontradoException("Mensaje no encontrado"));
 
-        return convertirADTO(c);
     }
 
     // Buscar Mensaje por id de orden
@@ -106,7 +102,7 @@ public class CommsService {
                 .collect(Collectors.toList());
     }
 
-    // Buscar Mensaje por id de orden
+    // Buscar Mensaje por id de user
     public List<CommsDTO> obtenerPorUserId(Long userId) {
         log.info("Solicitando listado de Mensajes para el user ID={}", userId);
         return commsRepository.findByUserId(userId).stream()
@@ -116,7 +112,7 @@ public class CommsService {
 
     // Eliminar Pago por id
     public boolean eliminarMensaje(Long id) {
-        log.info("Intentando eliminar usuario ID={}", id);
+        log.info("Intentando eliminar mensaje ID={}", id);
         if (commsRepository.existsById(id)) {
             commsRepository.deleteById(id);
             log.info("Mensaje ID={} eliminado con éxito", id);
@@ -128,19 +124,23 @@ public class CommsService {
 
     // Actualizar Mensaje por id
     public CommsDTO actualizarMensaje(Long id, CommsCreateDTO dto) {
-        return commsRepository.findById(id)
-                .map(comms -> {
-                    comms.setUserId(dto.getUserId());
-                    comms.setOrderId(dto.getOrderId());
-                    comms.setCorreo(dto.getCorreo());
-                    Comms actualizada = commsRepository.save(comms);
-                    log.info("Mensaje ID={} actualizado con éxito", id);
-                    return convertirADTO(actualizada);
-                })
+        Comms comms = commsRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Intento fallido de actualizar mensaje: ID={} no existe", id);
                     return new RecursoNoEncontradoException("No existe el mensaje con ID: " + id);
                 });
+
+        validarExistenciaUsuario(dto.getUserId());
+        validarExistenciaOrden(dto.getOrderId());
+
+        comms.setUserId(dto.getUserId());
+        comms.setOrderId(dto.getOrderId());
+        comms.setCorreo(dto.getCorreo());
+        comms.setMensaje(dto.getMensaje());
+
+        Comms actualizada = commsRepository.save(comms);
+        log.info("Mensaje ID={} actualizado con éxito", id);
+        return convertirADTO(actualizada);
     }
 
 

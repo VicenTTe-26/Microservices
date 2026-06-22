@@ -1,10 +1,10 @@
-package cl.duoc.user_service.controller;
+package auth.folder.auth_service.controller;
 
-import cl.duoc.user_service.service.UserService;
-import cl.duoc.user_service.dto.UserDTO;
-import cl.duoc.user_service.dto.UserCreateDTO;
-import cl.duoc.user_service.exception.GlobalExceptionHandler;
-import cl.duoc.user_service.exception.RecursoNoEncontradoException;
+import auth.folder.auth_service.service.AuthService;
+import auth.folder.auth_service.dto.AuthCreateDTO;
+import auth.folder.auth_service.dto.AuthDTO;
+import auth.folder.auth_service.exception.GlobalExceptionHandler;
+import auth.folder.auth_service.exception.RecursoNoEncontradoException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,23 +24,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Pruebas de Integración - Capa de Controlador (UserController)")
-public class UserControllerTest {
+@DisplayName("Pruebas de Integración - Capa de Controlador (AuthController)")
+public class AuthControllerTest {
 
     private MockMvc mockMvc;
 
     @Mock
-    private UserService userService;
+    private AuthService authService;
 
     @InjectMocks
-    private UserController userController;
+    private AuthController authController;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     @BeforeEach
     void setUp() {
-
-        this.mockMvc = MockMvcBuilders.standaloneSetup(userController)
+        this.mockMvc = MockMvcBuilders.standaloneSetup(authController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -48,12 +47,15 @@ public class UserControllerTest {
     @Test
     @DisplayName("POST -> Debe responder HTTP 201 Created")
     void debeRetornar201() throws Exception {
-        UserCreateDTO entrada = new UserCreateDTO(5L, "Alfonso Rojas", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
-        UserDTO salida = new UserDTO(100L, 5L, "Alfonso Rojas", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
+        
+        // Arrange
+        AuthCreateDTO entrada = new AuthCreateDTO("Vicente Araya", "vicente@gmail.com", "contraseña123");
+        AuthDTO salida = new AuthDTO(1L, "Vicente Araya", "vicente@gmail.com");
 
-        Mockito.when(userService.crearUsuario(Mockito.any(UserCreateDTO.class))).thenReturn(salida);
+        Mockito.when(authService.crearAuth(Mockito.any(AuthCreateDTO.class))).thenReturn(salida);
 
-        mockMvc.perform(post("/api/v2/users")
+        // Act & Assert
+        mockMvc.perform(post("/api/v2/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(entrada)))
                 .andExpect(status().isCreated());
@@ -62,28 +64,34 @@ public class UserControllerTest {
     @Test
     @DisplayName("GET -> Debe retornar HTTP 200 OK")
     void debeRetornar200() throws Exception {
-        Mockito.when(userService.listarTodas()).thenReturn(Collections.emptyList());
+        // Arrange
+        Mockito.when(authService.listarAuth()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/v2/users"))
+        // Act & Assert
+        mockMvc.perform(get("/api/v2/auth"))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("GET -> Debe retornar HTTP 404 Not Found")
     void debeRetornar404() throws Exception {
-        Mockito.when(userService.findDtoById(999L))
-               .thenThrow(new RecursoNoEncontradoException("No encontrado"));
+        // Arrange
+        Mockito.when(authService.buscarAuthPorId(999L))
+               .thenThrow(new RecursoNoEncontradoException("Auth no encontrado"));
 
-        mockMvc.perform(get("/api/v2/users/{id}", 999L))
+        // Act & Assert
+        mockMvc.perform(get("/api/v2/auth/{id}", 999L))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("POST -> Debe retornar HTTP 400 Bad Request ante payload inválido")
     void debeRetornar400() throws Exception {
-        UserCreateDTO entradaInvalida = new UserCreateDTO();
+        // Arrange
+        AuthCreateDTO entradaInvalida = new AuthCreateDTO();
 
-        mockMvc.perform(post("/api/v2/users")
+        // Act & Assert
+        mockMvc.perform(post("/api/v2/auth")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(entradaInvalida)))
                 .andExpect(status().isBadRequest());

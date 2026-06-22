@@ -56,7 +56,7 @@ public class UserServiceTest {
     @Test
     @DisplayName("Debe listar todos los usuarios")
     void debeListarUsers() {
-            User user = new User(2L, 5L, "Alfonso Rojas", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
+        User user = new User(2L, 5L, "Alfonso Rojas", "33.333.333-3", "09/08/1990", "+56944444444", "Av. Las Palmas 1234");
         when(userRepository.findAll()).thenReturn(Collections.singletonList(user));
 
         List<UserDTO> resultado = userService.listarTodas();

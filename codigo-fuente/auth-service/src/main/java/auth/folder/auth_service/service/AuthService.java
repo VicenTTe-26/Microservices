@@ -23,7 +23,7 @@ public class AuthService {
     }
 
     //Crear Usuario
-    public AuthDTO crearAuthUsuario(AuthCreateDTO dto) {
+    public AuthDTO crearAuth(AuthCreateDTO dto) {
 
         // 1. Convertir DTO de entrada a entidad
         Auth a = new Auth();

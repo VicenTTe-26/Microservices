@@ -12,7 +12,6 @@ import logistic.folder.logistic_service.exception.ServicioNoDisponibleException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,31 +22,31 @@ public class LogisticService {
     private static final Logger log = LoggerFactory.getLogger(LogisticService.class);
 
     private final LogisticRepository logisticRepository;
+    private final OrdenClient ordenClient; 
 
-    @Autowired
-    private OrdenClient ordenClient; 
-
-    public LogisticService(LogisticRepository logisticRepository) {
+    public LogisticService(LogisticRepository logisticRepository, OrdenClient ordenClient) {
         this.logisticRepository = logisticRepository;
+        this.ordenClient = ordenClient;
+    }
+
+    private void validarExistenciaOrden(Long orderId) {
+        log.info("Validando existencia para orden con id={}", orderId);
+        try {
+            OrdenDTO orden = ordenClient.buscarOrdenPorId(orderId);
+            log.info("Orden confirmada por Order Service: '{}'", orden.getId());
+        } catch (FeignException.NotFound e) {
+            log.warn("Servicio Orden respondió: La orden ID={} no existe", orderId);
+            throw new RecursoNoEncontradoException("La orden especificada no existe.");
+        } catch (FeignException e) {
+            log.error("Error al consultar servicio Order: {}", e.getMessage());
+            throw new ServicioNoDisponibleException("Servicio de Orden no disponible para verificar la id.");
+        }
     }
 
     public LogisticDTO crearEnvio(LogisticCreateDTO request) {
-        log.info("Validando orden con id={}", request.getOrderId());
-        log.info("Verificando existencia para orden con id={}", request.getOrderId());
-
-        // Llamada al microservicio de Orden
-        OrdenDTO orden;
-        try {
-            orden = ordenClient.buscarOrdenPorId(request.getOrderId());
-            log.info("EnviOrden confirmado por Order: '{}'", orden.getId());
-        } catch (FeignException.NotFound e) {
-            log.warn("Servicio AutOrden respondió: La orden ID={} no existe", request.getOrderId());
-            throw new RecursoNoEncontradoException("No se puede crear el envio: La orden especificada no existe.");
-        } catch (FeignException e) {
-            log.error("Error al consultar servicio Order: {}", e.getMessage());
-            throw new ServicioNoDisponibleException("Servicio de Orden no disponible para verificar la orden.");
-        } 
-
+        log.info("Iniciando creación de envío para orden con id={}", request.getOrderId());
+        
+        validarExistenciaOrden(request.getOrderId());
 
         Envio nuevo = new Envio();
         nuevo.setOrderId(request.getOrderId());
@@ -73,10 +72,11 @@ public class LogisticService {
     }
     // Buscar Envio por id
     public LogisticDTO findDtoById(Long id) {
-        Envio e = logisticRepository.findById(id)
+        return logisticRepository.findById(id)
+            .map(envio -> convertirADTO(envio))
             .orElseThrow(() -> new RecursoNoEncontradoException("Envio no encontrado"));
 
-        return convertirADTO(e);
+        
     }
 
     // Buscar Envio por id de orden
@@ -92,7 +92,7 @@ public class LogisticService {
         log.info("Intentando eliminar envio ID={}", id);
         if (logisticRepository.existsById(id)) {
             logisticRepository.deleteById(id);
-            log.info("Envio ID={} eliminada con éxito", id);
+            log.info("Envio ID={} eliminado con éxito", id);
             return true;
         }
         log.warn("No se pudo eliminar: Envio ID={} no existe", id);
@@ -104,6 +104,9 @@ public class LogisticService {
         log.info("Actualizando Envio id={}", id);
         Envio e = logisticRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Envio no encontrado: " + id));
+
+        validarExistenciaOrden(dto.getOrderId());
+
         e.setOrderId(dto.getOrderId());
         e.setDestinatarioNombre(dto.getDestinatarioNombre());
         e.setDireccionCompleta(dto.getDireccionCompleta());

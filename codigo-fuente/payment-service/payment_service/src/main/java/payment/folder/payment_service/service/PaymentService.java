@@ -29,24 +29,24 @@ public class PaymentService {
         this.ordenClient = ordenClient;
     }
 
-    public PaymentDTO crearPago(PaymentCreateDTO request) {
-        log.info("Validando Pago con id={}", request.getOrderId());
-        log.info("Verificando existencia para la orden con id={}", request.getOrderId());
-
-        // Llamada al microservicio de Order
-        OrdenDTO orden;
+    private void validarExistenciaOrden(Long orderId) {
+        log.info("Validando existencia para orden con id={}", orderId);
         try {
-            orden = ordenClient.buscarOrdenPorId(request.getOrderId());
-            log.info("Pago confirmado por la Orden: '{}'", orden.getId());
+            OrdenDTO orden = ordenClient.buscarOrdenPorId(orderId);
+            log.info("Orden confirmada por Order Service: '{}'", orden.getId());
         } catch (FeignException.NotFound e) {
-            log.warn("Servicio Orden respondió: La orden ID={} no existe", request.getOrderId());
-            throw new RecursoNoEncontradoException("No se puede crear el pago: La orden especificado no existe.");
+            log.warn("Servicio Orden respondió: La orden ID={} no existe", orderId);
+            throw new RecursoNoEncontradoException("La orden especificada no existe.");
         } catch (FeignException e) {
             log.error("Error al consultar servicio Order: {}", e.getMessage());
-            throw new ServicioNoDisponibleException("Servicio de Orden no disponible para verificar el id.");
-        } 
-        
+            throw new ServicioNoDisponibleException("Servicio de Orden no disponible para verificar la id.");
+        }
+    }
 
+    public PaymentDTO crearPago(PaymentCreateDTO request) {
+        log.info("Validando Pago con id={}", request.getOrderId());
+        
+        validarExistenciaOrden(request.getOrderId());
 
         Payment nuevo = new Payment();
         nuevo.setOrderId(request.getOrderId());
@@ -100,6 +100,9 @@ public class PaymentService {
         log.info("Actualizando Pago id={}", id);
         Payment p = paymentRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pago no encontrado: " + id));
+
+        validarExistenciaOrden(dto.getOrderId());
+
         p.setOrderId(dto.getOrderId());
         p.setTotalAmount(dto.getTotalAmount());
         p.setMetodoPago(dto.getMetodoPago());

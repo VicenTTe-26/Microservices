@@ -36,7 +36,7 @@ public class AuthController {
     })
     @PostMapping
     public ResponseEntity<AuthDTO> crearAuth(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Datos necesarios para la creacion", required = true) @Valid @RequestBody AuthCreateDTO dto) {
-        AuthDTO nuevoAuth = authService.crearAuthUsuario(dto);
+        AuthDTO nuevoAuth = authService.crearAuth(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoAuth);
     }
 

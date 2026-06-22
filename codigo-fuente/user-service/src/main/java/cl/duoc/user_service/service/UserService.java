@@ -29,23 +29,23 @@ public class UserService {
         this.authClient = authClient;
     }
 
-    public UserDTO crearUsuario(UserCreateDTO request) {
-        log.info("Validando usuario con id={}", request.getIdAuth());
-        log.info("Verificando existencia para usuario con id={}", request.getIdAuth());
-
-        // Llamada al microservicio de Auth
-        AuthDTO auth;
+    private void validarExistenciaAuth(Long authId) {
+        log.info("Validando existencia para auth con id={}", authId);
         try {
-            auth = authClient.buscarAuthPorId(request.getIdAuth());
-            log.info("Usuario confirmado por Auth: '{}'", auth.getNombre());
+            AuthDTO auth = authClient.buscarAuthPorId(authId);
+            log.info("Auth confirmada por Auth Service: '{}'", auth.getId());
         } catch (FeignException.NotFound e) {
-            log.warn("Servicio Auth respondió: El Auth ID={} no existe", request.getIdAuth());
-            throw new RecursoNoEncontradoException("No se puede crear el usuario: El auth especificado no existe.");
+            log.warn("Servicio Auth respondió: La auth ID={} no existe", authId);
+            throw new RecursoNoEncontradoException("La Auth especificada no existe.");
         } catch (FeignException e) {
             log.error("Error al consultar servicio Auth: {}", e.getMessage());
-            throw new ServicioNoDisponibleException("Servicio de Auth no disponible para verificar el usuario.");
-        } 
+            throw new ServicioNoDisponibleException("Servicio de Auth no disponible para verificar la id.");
+        }
+    }
 
+    public UserDTO crearUsuario(UserCreateDTO request) {
+
+        validarExistenciaAuth(request.getIdAuth());
 
         User nuevo = new User();
         nuevo.setIdAuth(request.getIdAuth());
@@ -104,6 +104,9 @@ public class UserService {
         log.info("Actualizando Usuario id={}", id);
         User u = userRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + id));
+
+        validarExistenciaAuth(dto.getIdAuth());
+
         u.setIdAuth(dto.getIdAuth());
         u.setNombreCompleto(dto.getNombreCompleto());
         u.setRut(dto.getRut());
